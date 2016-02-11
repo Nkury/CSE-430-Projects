@@ -22,9 +22,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+<<<<<<< HEAD
   <ItemGroup>
     <ClInclude Include="ProcessInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+=======
+>>>>>>> refs/remotes/origin/nizar
 </Project>
