@@ -6,7 +6,7 @@
 #include <linux/jiffies.h>
 
 
-asmlinkage long sys_my_syscall(int a, int b, int* pids, int* times, char* comm[], char* name[]){
+asmlinkage long sys_my_syscall(int* pids, int* times, char* comm[], char* name[]){
 
 	int taskPIDs[10000];
 	int taskTimes[10000];
