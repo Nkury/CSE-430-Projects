@@ -1,7 +1,6 @@
-//#include <linux/unistd.h>
+#include <linux/unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
 #define __NR_my_syscall 359
 
 struct processInfo{
@@ -9,18 +8,19 @@ struct processInfo{
 	char time[16];
 	char comm[16];
 	char name[64];
-};
+} proc;
+
+
 
 int main()
 {
 	char buffer[1024] = ""; // initializes it to a value that is not null (?)
-	struct processInfo proc;
 	int index = 0;
 	printf("  PID\tTTY\t\t\tTIME\tCMD"); // header of the printed processes
 	while (buffer != NULL){
 		int ret = syscall(__NR_my_syscall, index, buffer);
 		if (buffer != NULL){
-			proc = parseProcess(buffer);
+			parseProcess(buffer);
 			printf("  %s\t%s\t\t\t%s\t%s", proc.id, proc.name, proc.time, proc.comm);
 			index++;
 		}
@@ -29,13 +29,13 @@ int main()
 }
 
 // parse the space delimited buffer
-struct processInfo parseProcess(char buff[]){
+void parseProcess(char buff[]){
 	char input[1024]; // to store input
 	struct processInfo proc;// = (struct processInfo)malloc(sizeof(struct processInfo));
 	// what to store
 	int selection = 0;
 	int lastIndex = 0;
-	int i;
+	int i, j;
 	for (i = 0; i < 1024; i++){
 		if (buff[i] != ' '){
 			input[i - lastIndex] = buff[i];
@@ -51,11 +51,12 @@ struct processInfo parseProcess(char buff[]){
 				case 2: strcpy(proc.time, input);
 					break;
 				case 3: strcpy(proc.comm, input);
+					selection = 0;
 					break;
 			}
-			input = "";
+
+			for (j = 0; j < 1024; j++)
+				input[j] = '\0';
 		}
 	}
-
-	return proc;
 }

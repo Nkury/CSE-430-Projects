@@ -4,8 +4,7 @@
 #include <linux/list.h>
 #include <linux/tty.h>
 #include <linux/jiffies.h>
-#include <string>
-#include <stdio.h>
+#include <linux/linker.h>
 
 asmlinkage long sys_my_syscall(int index, char* buffer){
 
@@ -13,7 +12,7 @@ asmlinkage long sys_my_syscall(int index, char* buffer){
 	char buff[1024];
 
 	int count = 0;
-	int buffLength;
+	int buffLength = 0;
 	struct task_struct *task;	// instantiate an instance of task from task_struct that will be traversed in the following loop
 
 	// we loop through each of the tasks
@@ -23,8 +22,10 @@ asmlinkage long sys_my_syscall(int index, char* buffer){
 			long userTime = task->utime / HZ; // convert user time (in jiffies) to seconds
 			long execTime = task->stime / HZ; // convert exec time (in jiffies) to seconds
 			int time = userTime + execTime; // sum of user and exec time is process time
-			char taskComm[16] = task->comm;
-			char taskName[64] = task->signal->tty->name;
+			char taskComm[16];
+			strcpy(taskComm, task->comm);
+			char taskName[64];
+			strcpy(taskName, task->signal->tty->name);
 			sprintf(buff, "%d %s %d %s", id, taskName, time, taskComm); // stores the values in the buffer
 			buffLength = strlen(buff); // gets the size of the array
 		}
