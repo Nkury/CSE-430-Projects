@@ -22,7 +22,7 @@ int main()
 	// check if index = 0 so it can enter the loop in the first place
 	while (buffer != NULL || index == 0){
 		int ret = syscall(__NR_my_syscall, index, buffer);
-		if (buffer != NULL){
+		if (buffer != NULL || index == 0){
 			parseProcess(buffer);
 			printf("  %s\t%s\t\t\t%s\t%s", proc.id, proc.name, proc.time, proc.comm);
 			index++;
@@ -34,7 +34,7 @@ int main()
 // parse the space delimited buffer
 void parseProcess(char buff[]){
 	char input[1024]; // to store input
-	struct processInfo proc;// = (struct processInfo)malloc(sizeof(struct processInfo));
+
 	// what to store
 	int selection = 0;
 	int lastIndex = 0;

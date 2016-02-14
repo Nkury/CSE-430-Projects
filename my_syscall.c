@@ -4,7 +4,7 @@
 #include <linux/list.h>
 #include <linux/tty.h>
 #include <linux/jiffies.h>
-#include <linux/linker.h>
+#include <linux/linkage.h>
 
 asmlinkage long sys_my_syscall(int index, char* buffer){
 
