@@ -1,6 +1,7 @@
 #include <linux/unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #define __NR_my_syscall 359
 
 struct processInfo{
@@ -10,14 +11,16 @@ struct processInfo{
 	char name[64];
 } proc;
 
-
+// forward declaration
+void parseProcess(char[]);
 
 int main()
 {
-	char buffer[1024] = ""; // initializes it to a value that is not null (?)
+	char buffer[1024]; // initializes it to a value that is not null (?)
 	int index = 0;
 	printf("  PID\tTTY\t\t\tTIME\tCMD"); // header of the printed processes
-	while (buffer != NULL){
+	// check if index = 0 so it can enter the loop in the first place
+	while (buffer != NULL || index == 0){
 		int ret = syscall(__NR_my_syscall, index, buffer);
 		if (buffer != NULL){
 			parseProcess(buffer);

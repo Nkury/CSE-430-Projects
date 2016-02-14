@@ -10,6 +10,10 @@ asmlinkage long sys_my_syscall(int index, char* buffer){
 
 
 	char buff[1024];
+	int id, time, x;
+	long userTime, execTime;
+	char taskName[64];
+	char taskComm[64];
 
 	int count = 0;
 	int buffLength = 0;
@@ -18,21 +22,21 @@ asmlinkage long sys_my_syscall(int index, char* buffer){
 	// we loop through each of the tasks
 	for_each_process(task){
 		if (count == index){
-			int id = task->pid;
-			long userTime = task->utime / HZ; // convert user time (in jiffies) to seconds
-			long execTime = task->stime / HZ; // convert exec time (in jiffies) to seconds
-			int time = userTime + execTime; // sum of user and exec time is process time
-			char taskComm[16];
+			id = task->pid;
+			userTime = task->utime / HZ; // convert user time (in jiffies) to seconds
+			execTime = task->stime / HZ; // convert exec time (in jiffies) to seconds
+			time = userTime + execTime; // sum of user and exec time is process time
 			strcpy(taskComm, task->comm);
-			char taskName[64];
 			strcpy(taskName, task->signal->tty->name);
 			sprintf(buff, "%d %s %d %s", id, taskName, time, taskComm); // stores the values in the buffer
 			buffLength = strlen(buff); // gets the size of the array
+			if (buffLength > 1024)
+				buffLength = 1024;
 		}
 		count++;
 	}
 
-	int x = copy_to_user(buffer, buff, buffLength); // use copy_to_user to actually copy kernel info to user space
+	x = copy_to_user(buffer, buff, buffLength); // use copy_to_user to actually copy kernel info to user space
 	return x; // returns 0 if copied successfully
 }
 
