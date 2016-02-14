@@ -9,7 +9,7 @@
 asmlinkage long sys_my_syscall(int index, char* buffer){
 
 
-	char buff[1024];
+	char buff[800];
 	int id, time, x;
 	long userTime, execTime;
 	char taskName[64];
@@ -30,8 +30,8 @@ asmlinkage long sys_my_syscall(int index, char* buffer){
 			strcpy(taskName, task->signal->tty->name);
 			sprintf(buff, "%d %s %d %s", id, taskName, time, taskComm); // stores the values in the buffer
 			buffLength = strlen(buff); // gets the size of the array
-			if (buffLength > 1024)
-				buffLength = 1024;
+			if (buffLength > 800)
+				buffLength = 800;
 		}
 		count++;
 	}

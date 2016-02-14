@@ -16,7 +16,7 @@ void parseProcess(char[]);
 
 int main()
 {
-	char buffer[1024]; // initializes it to a value that is not null (?)
+	char buffer[800]; // initializes it to a value that is not null (?)
 	int index = 0;
 	printf("  PID\tTTY\t\t\tTIME\tCMD"); // header of the printed processes
 	// check if index = 0 so it can enter the loop in the first place
@@ -33,7 +33,7 @@ int main()
 
 // parse the space delimited buffer
 void parseProcess(char buff[]){
-	char input[1024]; // to store input
+	char input[800]; // to store input
 
 	// what to store
 	int selection = 0;
@@ -58,7 +58,7 @@ void parseProcess(char buff[]){
 					break;
 			}
 
-			for (j = 0; j < 1024; j++)
+			for (j = 0; j < 800; j++)
 				input[j] = '\0';
 		}
 	}
