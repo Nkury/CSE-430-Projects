@@ -9,6 +9,7 @@
 
 asmlinkage long sys_my_syscall(int index, char* buffer){
 
+
 	char buff[1024];
 
 	int count = 0;
@@ -33,3 +34,4 @@ asmlinkage long sys_my_syscall(int index, char* buffer){
 	int x = copy_to_user(buffer, buff, buffLength); // use copy_to_user to actually copy kernel info to user space
 	return x; // returns 0 if copied successfully
 }
+
