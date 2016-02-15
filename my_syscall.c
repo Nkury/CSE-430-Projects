@@ -49,7 +49,7 @@ asmlinkage long sys_my_syscall(int index, char* buffer){
 			else{
 				strcpy(taskName, task->signal->tty->name);
 			}
-			snprintf(buff, sizeof(buff), "   %d %s\t\t\t%s %s", id, taskName, timeFormat, taskComm); // stores the values in the buffer
+			snprintf(buff, sizeof(buff), "%5d %-8s %8s %s", id, taskName, timeFormat, taskComm); // stores the values in the buffer
 			buffLength = strlen(buff); // gets the size of the array
 			if (buffLength > 800)
 				buffLength = 800;
