@@ -68,6 +68,9 @@
     <ClCompile Include="my_syscall.c" />
     <ClCompile Include="user.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ProcessInfo.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -5,4 +5,7 @@
     <ClCompile Include="my_syscall.c" />
     <ClCompile Include="user.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ProcessInfo.h" />
+  </ItemGroup>
 </Project>
