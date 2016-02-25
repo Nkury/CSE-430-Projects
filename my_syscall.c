@@ -4,32 +4,60 @@
 #include <linux/list.h>
 #include <linux/tty.h>
 #include <linux/jiffies.h>
+#include <linux/linkage.h>
+
+asmlinkage long sys_my_syscall(int index, char* buffer){
 
 
-asmlinkage long sys_my_syscall(int a, int b, int* pids, int* times, char* comm[], char* name[]){
-
-	int taskPIDs[10000];
-	int taskTimes[10000];
-	char* taskComms[10000];
-	char* taskNames[10000];
-
+	char buff[800];
+	int id, x;
+	cputime_t utime, stime, jiff;
+	char taskName[64];
+	char taskComm[64];
+	int secs, minutes, hours;
+	char timeFormat[9];
 	int count = 0;
+	int buffLength = 0;
+
 	struct task_struct *task;	// instantiate an instance of task from task_struct that will be traversed in the following loop
 
 	// we loop through each of the tasks
 	for_each_process(task){
-		taskPIDs[count] = task->pid;
-		long userTime = task->utime / HZ; // convert user time (in jiffies) to seconds
-		long execTime = task->stime / HZ; // convert exec time (in jiffies) to seconds
-		taskTimes[count] = userTime + execTime; // sum of user and exec time is process time
-		taskComms[count] = task->comm;
-		taskNames[count] = task->signal->tty->name;
+		if (count == index){
+			id = task->pid;
+			utime = 0;
+			stime = 0;
+			thread_group_cputime_adjusted(task, &utime, &stime);
+			jiff = utime + stime;
+			secs = jiff / HZ;
+			hours = secs / 3600;
+			secs = secs - hours * 3600;
+			minutes = secs / 60;
+			secs = secs - minutes * 60;
+			snprintf(timeFormat, sizeof(timeFormat), "%.2d:%.2d:%.2d", (int)hours, (int)minutes, (int)secs);
+
+
+			/*
+			userTime = task->utime / HZ; // convert user time (in jiffies) to seconds
+			execTime = task->stime / HZ; // convert exec time (in jiffies) to seconds
+			time = userTime + execTime; // sum of user and exec time is process time
+			*/
+			strcpy(taskComm, task->comm);
+			if (task->signal->tty == NULL){
+				strcpy(taskName, "?");
+			}
+			else{
+				strcpy(taskName, task->signal->tty->name);
+			}
+			snprintf(buff, sizeof(buff), "%5d %-8s %8s %s", id, taskName, timeFormat, taskComm); // stores the values in the buffer
+			buffLength = strlen(buff); // gets the size of the array
+			if (buffLength > 800)
+				buffLength = 800;
+		}
 		count++;
 	}
 
-	int x = copy_to_user(pids, taskPIDS, sizeof(int)); // use copy_to_user to actually copy kernel info to user space
-	int y = copy_to_user(times, taskTimes, sizeof(int)); // use copy_to_user to actually copy kernel info to user space
-	int c = copy_to_user(comm, taskComms, sizeof(taskComms)); // use copy_to_user to actually copy kernel info to user space
-	int d = copy_to_user(name, taskNames, sizeof(taskNames)); // use copy_to_user to actually copy kernel info to user space
-	return x + y + c + d; // returns 0 if copied successfully
+	x = copy_to_user(buffer, buff, buffLength); // use copy_to_user to actually copy kernel info to user space
+	return count; // returns 0 if copied successfully
 }
+
