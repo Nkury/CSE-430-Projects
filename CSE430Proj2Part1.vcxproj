@@ -64,6 +64,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="fork_bomb_killer.c" />
     <ClCompile Include="listProcesses.c" />
     <ClCompile Include="my_syscall.c" />
     <ClCompile Include="user.c" />
