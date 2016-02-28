@@ -31,13 +31,13 @@ int my_kthread_function(void* data){
 }
 
 void oom_kill_process (void* victim){
-	send_sig_info(SIGKILL, SEND_SIG_FORCED, victim, true);
+	send_sig_info(SIGKILL, SEND_SIG_FORCED, victim);
 	
 	for_each_process(task) {
 		if (!process_shares_mm(task, mm))
 			continue;
 		else
-			send_sig_info(SIGKILL, SEND_SIG_FORCED, task, true);
+			send_sig_info(SIGKILL, SEND_SIG_FORCED, task);
 	}
 }
 
