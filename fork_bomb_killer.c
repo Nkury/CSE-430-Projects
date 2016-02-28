@@ -1,9 +1,10 @@
 #include <linux/module.h>	/* Needed by all modules */
 #include <linux/kernel.h>	/* Needed for KERN_INFO */
 #include <linux/init.h>		/* Needed for the macros */
-#include <linux/sched.h>	/* Needed for 'for_each_process' */
+#include <linux/sched.h>		/* Needed for 'for_each_process' */
 #include <linux/delay.h>
 #include <linux/list.h>
+#include <linux/signal.h>
 
 struct task_struct *task;
 
