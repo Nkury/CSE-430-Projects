@@ -7,25 +7,63 @@
 #include <linux/signal.h>
 
 struct task_struct *task;
+int count = 0;
+int threshold = 100;
+
+void countChildren(struct_task* traverse){
+	struct list_head *p;
+	struct task_struct ts;
+	
+	if (traverse == null){
+		return;
+	}
+	else{
+		list_for_each(p, &(traverse)){
+			ts = *list_entry(p, struct task_struct, sibling);
+			countChildren(ts.children);
+			count++;
+		}
+	}
+}
+
+void countChildren(struct_task* traverse){
+	struct list_head *p;
+	struct task_struct ts;
+
+	if (traverse == null){
+		return;
+	}
+	else{
+		list_for_each(p, &(traverse)){
+			ts = *list_entry(p, struct task_struct, sibling);
+			countChildren(ts.children);
+			printk(KERN_INFO "%d\n", ts.pid);
+		}
+	}
+}
 
 int my_kthread_function(void* data){
 	while (!kthread_should_stop()){
 		// most of the time kthread sleeps
 		msleep(1000);
-		read_lock(&tasklist_lock); // lock the task_struct
+		//read_lock(&tasklist_lock); // lock the task_struct
 		struct list_head *p;
 		struct task_struct ts;
 		for_each_process(task){
-			list_for_each(p, &(task->children)){
-				ts = *list_entry(p, struct task_struct, sibling);
-				//** do something with data structure Grant is creating
+			if (task->pid != 1){
+				countChildren(task);
+				if (count > threshold){
+					printk(KERN_INFO "FORK BOMB DETECTED! Here are the processes\n");
+					printk(KERN_INFO "%d\n", task->pid);
+					printChildren(task);
+				}
 			}
+			count = 0;
 		}
-		read_unlock(&tasklist_lock);
+		//read_unlock(&tasklist_lock);
 		//** check Grant's data structure for depth greater than 3
 		//** call Jackson's kill command (WIP)
 		oom_kill_process(p);
-		//** stop the kthread somehow
 	}
 	return 0;
 }
@@ -42,6 +80,7 @@ void oom_kill_process (void* victim){
 }
 
 static int __init fork_bomb_killer(void){
+	int data;
 	data = 20;
 
 	// We can instantiate multiple threads, but I think one should suffice?
