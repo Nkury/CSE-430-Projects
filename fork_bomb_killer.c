@@ -5,65 +5,63 @@
 #include <linux/delay.h>
 #include <linux/list.h>
 #include <linux/signal.h>
+#include <linux/kthread.h>
+#include <linux/slab.h>
 
 struct task_struct *task;
+
 int count = 0;
 int threshold = 100;
 
-void countChildren(struct_task* traverse){
-	struct list_head *p;
-	struct task_struct ts;
-	
-	if (traverse == null){
-		return;
-	}
-	else{
-		list_for_each(p, &(traverse)){
-			ts = *list_entry(p, struct task_struct, sibling);
-			countChildren(ts.children);
-			count++;
+struct processTable {
+	char name[64];
+	int pCount;
+	struct list_head list;
+};
+
+struct processTable myTable;
+
+bool checkName(char* name){
+	struct list_head *pos;
+	struct processTable *temp;
+	list_for_each(pos, &(myTable.list)){
+		temp = list_entry(pos, struct processTable, list);
+		if (strcmp(temp->name, name) == 0){
+			return false;
 		}
 	}
-}
-
-void countChildren(struct_task* traverse){
-	struct list_head *p;
-	struct task_struct ts;
-
-	if (traverse == null){
-		return;
-	}
-	else{
-		list_for_each(p, &(traverse)){
-			ts = *list_entry(p, struct task_struct, sibling);
-			countChildren(ts.children);
-			printk(KERN_INFO "%d\n", ts.pid);
-		}
-	}
+	return true;
 }
 
 int my_kthread_function(void* data){
+
+	INIT_LIST_HEAD(&myTable.list);
 	while (!kthread_should_stop()){
-		// most of the time kthread sleeps
-		msleep(1000);
-		//read_lock(&tasklist_lock); // lock the task_struct
 		struct list_head *p;
-		struct task_struct ts;
+		struct processTable *temp;
+		struct processTable *ts;
 		for_each_process(task){
 			if (task->pid != 1){
-				countChildren(task);
-				if (count > threshold){
-					printk(KERN_INFO "FORK BOMB DETECTED! Here are the processes\n");
-					printk(KERN_INFO "%d\n", task->pid);
-					printChildren(task);
+				if (checkName(task->comm)){
+					list_for_each(p, &(myTable.list)){
+						ts = list_entry(p, struct processTable, list);
+						if (strcmp(ts->name, task->comm)){
+							ts->pCount++;
+						}
+					}
+				}
+				else{
+					temp = kmalloc(sizeof(struct processTable), GFP_KERNEL);
+					strcpy(temp->name, task->comm);
+					temp->pCount = 0;
+					list_add(&(temp->list), &(myTable.list));
+					// kfree(temp) not sure to put this in here
 				}
 			}
-			count = 0;
 		}
-		//read_unlock(&tasklist_lock);
-		//** check Grant's data structure for depth greater than 3
-		//** call Jackson's kill command (WIP)
+		// checks to see if it can kill processes after a second
 		oom_kill_process(p);
+		msleep(1000);
 	}
 	return 0;
 }
@@ -80,7 +78,6 @@ void oom_kill_process (void* victim){
 }
 
 static int __init fork_bomb_killer(void){
-	int data;
 	data = 20;
 
 	// We can instantiate multiple threads, but I think one should suffice?
