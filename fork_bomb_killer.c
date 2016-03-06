@@ -60,20 +60,20 @@ int my_kthread_function(void* data){
 			}
 		}
 		// checks to see if it can kill processes after a second
-		oom_kill_process(p);
+		kill_process(p);
 		msleep(1000);
 	}
 	return 0;
 }
 
-void oom_kill_process (void* victim){
-	send_sig_info(SIGKILL, SEND_SIG_FORCED, victim);
+void kill_process (struct task_struct *victim){
+	send_sig(SIGKILL, victim, 0);
 	
 	for_each_process(task) {
-		if (!process_shares_mm(task, mm))
+		if (!process_shares_mm(task, victim->mm))
 			continue;
 		else
-			send_sig_info(SIGKILL, SEND_SIG_FORCED, task);
+			send_sig(SIGKILL, task, 0);
 	}
 }
 
