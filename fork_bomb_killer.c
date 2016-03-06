@@ -60,7 +60,13 @@ int my_kthread_function(void* data){
 			}
 		}
 		// checks to see if it can kill processes after a second
-		kill_process(p);
+		list_for_each(p, &(myTable.list)){
+			ts = list_entry(p, struct processTable, list);
+			if (ts->pCount > threshold){
+				kill_process(ts->name);
+			}
+		}
+
 		msleep(1000);
 		list_for_each(p, &(myTable.list)){
 			ts = list_entry(p, struct processTable, list);
@@ -70,7 +76,10 @@ int my_kthread_function(void* data){
 	return 0;
 }
 
-void kill_process (struct task_struct *victim){
+// takes parameter name of target. Goes through all the tasks using
+// for_each_process and eliminates all processes that have the target
+// name
+void kill_process (char* target){
 	send_sig(SIGKILL, victim, 0);
 	
 	for_each_process(task) {
