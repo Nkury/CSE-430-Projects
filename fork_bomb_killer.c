@@ -33,6 +33,7 @@ bool checkName(char* name){
 	return true;
 }
 
+void kill_process(char* target);
 int my_kthread_function(void* data){
 
 	INIT_LIST_HEAD(&myTable.list);
@@ -45,7 +46,7 @@ int my_kthread_function(void* data){
 				if (!checkName(task->comm)){
 					list_for_each(p, &(myTable.list)){
 						ts = list_entry(p, struct processTable, list);
-						if (strcmp(ts->name, task->comm)==0){
+						if (strcmp(ts->name, task->comm) == 0){
 							ts->pCount++;
 						}
 					}
@@ -72,6 +73,7 @@ int my_kthread_function(void* data){
 			ts = list_entry(p, struct processTable, list);
 			ts->pCount = 0;
 		}
+
 	}
 	return 0;
 }
@@ -79,19 +81,19 @@ int my_kthread_function(void* data){
 // takes parameter name of target. Goes through all the tasks using
 // for_each_process and eliminates all processes that have the target
 // name
-void kill_process (char* target){
-	send_sig(SIGKILL, victim, 0);
-	
+
+void kill_process(char* target){
+
 	for_each_process(task) {
-		if (!process_shares_mm(task, victim->mm))
-			continue;
-		else
+		if (strcmp(task->comm, target) == 0) {
+			printk("KILLED: %d\n", task->pid);
 			send_sig(SIGKILL, task, 0);
+		}
 	}
 }
 
 static int __init fork_bomb_killer(void){
-	data = 20;
+	int data = 20;
 
 	// We can instantiate multiple threads, but I think one should suffice?
 	task = kthread_run(
