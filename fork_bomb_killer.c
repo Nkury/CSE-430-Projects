@@ -42,10 +42,10 @@ int my_kthread_function(void* data){
 		struct processTable *ts;
 		for_each_process(task){
 			if (task->pid != 1){
-				if (checkName(task->comm)){
+				if (!checkName(task->comm)){
 					list_for_each(p, &(myTable.list)){
 						ts = list_entry(p, struct processTable, list);
-						if (strcmp(ts->name, task->comm)){
+						if (strcmp(ts->name, task->comm)==0){
 							ts->pCount++;
 						}
 					}
@@ -53,7 +53,7 @@ int my_kthread_function(void* data){
 				else{
 					temp = kmalloc(sizeof(struct processTable), GFP_KERNEL);
 					strcpy(temp->name, task->comm);
-					temp->pCount = 0;
+					temp->pCount = 1;
 					list_add(&(temp->list), &(myTable.list));
 					// kfree(temp) not sure to put this in here
 				}
@@ -62,6 +62,10 @@ int my_kthread_function(void* data){
 		// checks to see if it can kill processes after a second
 		kill_process(p);
 		msleep(1000);
+		list_for_each(p, &(myTable.list)){
+			ts = list_entry(p, struct processTable, list);
+			ts->pCount = 0;
+		}
 	}
 	return 0;
 }
