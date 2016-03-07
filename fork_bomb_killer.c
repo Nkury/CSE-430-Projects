@@ -150,5 +150,5 @@ static void __exit fork_bomb_killer_exit(void){
 module_init(fork_bomb_killer);
 module_exit(fork_bomb_killer_exit);
 
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("Fork Bomb Defuser");
