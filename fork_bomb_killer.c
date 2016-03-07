@@ -7,11 +7,20 @@
 #include <linux/signal.h>
 #include <linux/kthread.h>
 #include <linux/slab.h>
+#include <linux/semaphore.h>
+
+struct semaphore fork_sem;
 
 struct task_struct *task;
+struct task_struct *detector; // detects fork bombs
+struct task_struct *scanner; // scans processes for new process entries
+
+struct list_head *clearP;
+struct list_head *clearQ;
 
 int count = 0;
-int threshold = 100;
+int currentProcessCount = 0;
+int threshold = 50;
 
 struct processTable {
 	char name[64];
@@ -20,6 +29,7 @@ struct processTable {
 };
 
 struct processTable myTable;
+struct processTable *tempProc;
 
 bool checkName(char* name){
 	struct list_head *pos;
@@ -34,48 +44,68 @@ bool checkName(char* name){
 }
 
 void kill_process(char* target);
+
 int my_kthread_function(void* data){
 
 	INIT_LIST_HEAD(&myTable.list);
 	while (!kthread_should_stop()){
-		struct list_head *p;
-		struct processTable *temp;
-		struct processTable *ts;
-		for_each_process(task){
-			if (task->pid != 1){
-				if (!checkName(task->comm)){
-					list_for_each(p, &(myTable.list)){
-						ts = list_entry(p, struct processTable, list);
-						if (strcmp(ts->name, task->comm) == 0){
-							ts->pCount++;
+		if (down_interruptible(&fork_sem)){
+			/* interrupted ... */
+		}
+		else{
+			struct list_head *p;
+			struct processTable *temp;
+			struct processTable *ts;
+			for_each_process(task){
+				if (task->pid != 1){
+					if (!checkName(task->comm)){
+						list_for_each(p, &(myTable.list)){
+							ts = list_entry(p, struct processTable, list);
+							if (strcmp(ts->name, task->comm) == 0){
+								ts->pCount++;
+							}
 						}
 					}
-				}
-				else{
-					temp = kmalloc(sizeof(struct processTable), GFP_KERNEL);
-					strcpy(temp->name, task->comm);
-					temp->pCount = 1;
-					list_add(&(temp->list), &(myTable.list));
-					// kfree(temp) not sure to put this in here
+					else{
+						temp = kmalloc(sizeof(struct processTable), GFP_KERNEL);
+						strcpy(temp->name, task->comm);
+						temp->pCount = 1;
+						list_add(&(temp->list), &(myTable.list));
+						// kfree(temp) not sure to put this in here
+					}
 				}
 			}
-		}
-		// checks to see if it can kill processes after a second
-		list_for_each(p, &(myTable.list)){
-			ts = list_entry(p, struct processTable, list);
-			if (ts->pCount > threshold){
-				kill_process(ts->name);
+			// checks to see if it can kill processes after a second
+			list_for_each(p, &(myTable.list)){
+				ts = list_entry(p, struct processTable, list);
+				if (ts->pCount > threshold){
+					kill_process(ts->name);
+				}
+			}
+
+			list_for_each(p, &(myTable.list)){
+				ts = list_entry(p, struct processTable, list);
+				ts->pCount = 0;
 			}
 		}
-
-		msleep(1000);
-		list_for_each(p, &(myTable.list)){
-			ts = list_entry(p, struct processTable, list);
-			ts->pCount = 0;
-		}
-
 	}
 	return 0;
+}
+
+int scan_function(void *data){
+	while (!kthread_should_stop()){
+		struct task_struct *cTask; // for iterating tasks
+		for_each_process(cTask){
+			count++;
+		}
+
+		if (count != currentProcessCount){
+			currentProcessCount = count;
+			up(&fork_sem);
+		}
+
+		count = 0;
+	}
 }
 
 // takes parameter name of target. Goes through all the tasks using
@@ -95,16 +125,28 @@ void kill_process(char* target){
 static int __init fork_bomb_killer(void){
 	int data = 20;
 
+	// initialize semaphore
+	sema_init(&fork_sem, 0);
+
 	// We can instantiate multiple threads, but I think one should suffice?
-	task = kthread_run(
+	detector = kthread_run(
 		&my_kthread_function,
 		(void*)data,
 		"my_kthread");
-
+	scanner = kthread_run(
+		&scan_function,
+		(void*)data,
+		"scan_kthread");
 	return 0;
 }
 
 static void __exit fork_bomb_killer_exit(void){
+	// clears the process table memory
+	list_for_each_safe(clearP, clearQ, &myTable.list){
+		tempProc = list_entry(clearP, struct processTable, list);
+		list_del(clearP);
+		kfree(tempProc);
+	}
 	kthread_stop(task);
 }
 
