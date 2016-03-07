@@ -49,10 +49,8 @@ int my_kthread_function(void* data){
 
 	INIT_LIST_HEAD(&myTable.list);
 	while (!kthread_should_stop()){
-		if (down_interruptible(&fork_sem)){
-			/* interrupted ... */
-		}
-		else{
+
+		down_interruptible(&fork_sem);
 			struct list_head *p;
 			struct processTable *temp;
 			struct processTable *ts;
@@ -71,10 +69,10 @@ int my_kthread_function(void* data){
 						strcpy(temp->name, task->comm);
 						temp->pCount = 1;
 						list_add(&(temp->list), &(myTable.list));
-						// kfree(temp) not sure to put this in here
 					}
 				}
 			}
+
 			// checks to see if it can kill processes after a second
 			list_for_each(p, &(myTable.list)){
 				ts = list_entry(p, struct processTable, list);
@@ -87,7 +85,6 @@ int my_kthread_function(void* data){
 				ts = list_entry(p, struct processTable, list);
 				ts->pCount = 0;
 			}
-		}
 	}
 	return 0;
 }
@@ -116,7 +113,7 @@ void kill_process(char* target){
 
 	for_each_process(task) {
 		if (strcmp(task->comm, target) == 0) {
-			printk("KILLED: %d\n", task->pid);
+			printk("KILLED: %s %d\n", task->comm, task->pid);
 			send_sig(SIGKILL, task, 0);
 		}
 	}
