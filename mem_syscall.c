@@ -5,59 +5,65 @@
 #include <linux/tty.h>
 #include <linux/jiffies.h>
 #include <linux/linkage.h>
+#include <linux/highmem.h>
+#include <linux/spinlock.h>
+#include <linux/errno.h>
+#include <linux/mm.h>
+#include <linux/fs.h>
+#include <linux/pagemap.h>
+#include <linux/rmap.h>
+#include <linux/swap.h>
+#include <linux/swapops.h>
+#include <asm/page.h>
+#include <linux/rwsem.h>
+#include <linux/hugetlb.h>
+#include <asm/pgtable_types.h>
+#include <asm/pgtable.h>
+#include <asm/tlbflush.h>
 
-asmlinkage long sys_my_syscall(int index, char* buffer){
+asmlinkage long sys_my_syscall(int pid, long virtAddr){
 
-
-	char buff[800];
-	int id, x;
-	cputime_t utime, stime, jiff;
-	char taskName[64];
-	char taskComm[64];
-	int secs, minutes, hours;
-	char timeFormat[9];
-	int count = 0;
-	int buffLength = 0;
+	pgd_t *pgd;
+	pud_t *pud;
+	pmd_t *pmd;
+	pte_t *pte;
 
 	struct task_struct *task;	// instantiate an instance of task from task_struct that will be traversed in the following loop
 
 	// we loop through each of the tasks
 	for_each_process(task){
-		if (count == index){
-			id = task->pid;
-			utime = 0;
-			stime = 0;
-			thread_group_cputime_adjusted(task, &utime, &stime);
-			jiff = utime + stime;
-			secs = jiff / HZ;
-			hours = secs / 3600;
-			secs = secs - hours * 3600;
-			minutes = secs / 60;
-			secs = secs - minutes * 60;
-			snprintf(timeFormat, sizeof(timeFormat), "%.2d:%.2d:%.2d", (int)hours, (int)minutes, (int)secs);
+		if (pid == task->pid){
+			pgd = pgd_offset(task->mm, virtAddr);
 
+			// checks if there is a valid entry in the page global directory
+			if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd))){
+				return -1;
+			}
 
-			/*
-			userTime = task->utime / HZ; // convert user time (in jiffies) to seconds
-			execTime = task->stime / HZ; // convert exec time (in jiffies) to seconds
-			time = userTime + execTime; // sum of user and exec time is process time
-			*/
-			strcpy(taskComm, task->comm);
-			if (task->signal->tty == NULL){
-				strcpy(taskName, "?");
+			pud = pud_offset(pgd, virtAddr);
+
+			// checks if there is a valid entry in the page upper directory
+			if (pud_none(*pud) || unlikely(pud_bad(*pud))){
+				return -1;
 			}
-			else{
-				strcpy(taskName, task->signal->tty->name);
+
+			pmd = pmd_offset(pud, virtAddr);
+
+			// checks if there is a valid entry in the page middle directory
+			if (pmd_none(*pmd) || unlikely(pmd_bad(*pmd))){
+				return -1;
 			}
-			snprintf(buff, sizeof(buff), "%5d %-8s %8s %s", id, taskName, timeFormat, taskComm); // stores the values in the buffer
-			buffLength = strlen(buff); // gets the size of the array
-			if (buffLength > 800)
-				buffLength = 800;
+
+			pte = pte_offset_map(pmd, virtAddr);
+
+			// checks if there is a valid table entry
+			if (pte_none(*pte))
+				return -1;
+			else
+				return pte;
 		}
-		count++;
 	}
 
-	x = copy_to_user(buffer, buff, buffLength); // use copy_to_user to actually copy kernel info to user space
-	return count; // returns 0 if copied successfully
+	return -1; // returns -1 if copied successfully
 }
 
