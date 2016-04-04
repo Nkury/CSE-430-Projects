@@ -57,12 +57,10 @@ asmlinkage long sys_my_syscall(int pid, long virtAddr){
 
 			ptep = pte_offset_map_lock(task->mm, pmd, virtAddr, &ptl);
 
-			if (pte_none(pte))
-				return -4;
-
 			pte = *ptep;
 
 			pte_unmap_unlock(ptep, ptl);
+
 			// checks if there is a valid page table entry
 			if (pte_present(pte)){
 
@@ -73,6 +71,10 @@ asmlinkage long sys_my_syscall(int pid, long virtAddr){
 				return pte_pfn(pte);
 			}
 			else{
+
+				if (pte_none(pte))
+					return -4;
+
 				return pte_pfn(pte);
 			}
 
