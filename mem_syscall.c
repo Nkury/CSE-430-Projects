@@ -26,7 +26,8 @@ asmlinkage long sys_my_syscall(int pid, long virtAddr){
 	pgd_t *pgd;
 	pud_t *pud;
 	pmd_t *pmd;
-	pte_t *pte;
+	spinlock_t *ptl;
+	pte_t *ptep, pte;
 
 	struct task_struct *task;	// instantiate an instance of task from task_struct that will be traversed in the following loop
 
@@ -54,13 +55,22 @@ asmlinkage long sys_my_syscall(int pid, long virtAddr){
 				return -1;
 			}
 
-			pte = pte_offset_map(pmd, virtAddr);
+			ptep = pte_offset_map_lock(task->mm, pmd, virtAddr, &ptl);
 
-			// checks if there is a valid table entry
-			if (pte_none(*pte))
-				return -1;
-			else
+			if (pte_none(pte))
+				return -4;
+
+			pte = *ptep;
+
+			pte_unmap_unlock(ptep, ptl);
+			// checks if there is a valid page table entry
+			if (pte_present(pte)){
+				return pte_pfn(pte);
+			}
+			else{
 				return pte;
+			}
+
 		}
 	}
 
