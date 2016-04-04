@@ -7,8 +7,13 @@
 
 int main ()
 {
-	int pid;	// arbitrary
-	long virtAddr;	// arbitrary
+	int pid;
+	long virtAddr;
+	
+	printf("PID: ");
+	scanf("%d", &pid);
+	printf("Virtual Address: ");
+	scanf("%d", &virtAddr);
 
 	long address = syscall(__NR_my_syscall, pid, vAddr);
 
