@@ -65,10 +65,15 @@ asmlinkage long sys_my_syscall(int pid, long virtAddr){
 			pte_unmap_unlock(ptep, ptl);
 			// checks if there is a valid page table entry
 			if (pte_present(pte)){
+
+				// PHYSICAL MEMORY ADDRESS
+				// SHIFT LEFT 12 bits and then
+				// add last 12 bits of virtual address
+				// to the memory address of pte
 				return pte_pfn(pte);
 			}
 			else{
-				return pte;
+				return pte_pfn(pte);
 			}
 
 		}
