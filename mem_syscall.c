@@ -64,16 +64,20 @@ asmlinkage long sys_my_syscall(int pid, long virtAddr){
 			// checks if there is a valid page table entry
 			if (pte_present(pte)){
 
-				// PHYSICAL MEMORY ADDRESS
-				// SHIFT LEFT 12 bits and then
-				// add last 12 bits of virtual address
-				// to the memory address of pte
-				return pte_pfn(pte);
+				unsigned r = 0;
+				unsigned i;
+				for (i = 20; i < 32; i++){
+					r |= 1 << i;
+				}
+				unsigned shifted_pfn = pte_pfn(pte) >> 12;
+				unsigned offset = r & virtAddr;
+				unsigned paddr = shifted_pfn | offset;
+				return paddr;
 			}
 			else{
 
 				if (pte_none(pte))
-					return -4;
+					return -1;
 
 				return pte_pfn(pte);
 			}
