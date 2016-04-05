@@ -19,7 +19,7 @@ int main (int argc, char *argv[])
 		virtAddr = atol(argv[2]);
 	}
 	
-	long address = syscall(__NR_my_syscall, pid, vAddr);
+	long address = syscall(__NR_my_syscall, pid, virtAddr);
 
 	if (address == -1)
 		printf("That page is not available.\n");
