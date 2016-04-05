@@ -10,8 +10,9 @@ int main (int argc, char *argv[])
 	int pid;
 	long virtAddr;
 	
-	if (argc !=3) {
-		printf("Two arguments expected in the form of <PID> <Virtual Address>.");
+	if (argc != 3) {
+		printf("Two arguments are expected in the form of <PID> <Virtual Address>.");
+		exit(1);
 	}
 	else {
 		pid = atoi(argv[1]);
