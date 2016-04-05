@@ -5,16 +5,19 @@
 
 #define __NR_my_syscall 359
 
-int main ()
+int main (int argc, char *argv[])
 {
 	int pid;
 	long virtAddr;
 	
-	printf("PID: ");
-	scanf("%d", &pid);
-	printf("Virtual Address: ");
-	scanf("%d", &virtAddr);
-
+	if (argc !=3) {
+		printf("Two arguments expected in the form of <PID> <Virtual Address>.");
+	}
+	else {
+		pid = atoi(argv[1]);
+		virtAddr = atol(argv[2]);
+	}
+	
 	long address = syscall(__NR_my_syscall, pid, vAddr);
 
 	if (address == -1)
