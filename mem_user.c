@@ -25,8 +25,10 @@ int main (int argc, char *argv[])
 
 	if (address == -1)
 		printf("That page is not available.\n");
-	else
+	else {
 		printf("The address is %ld.\n", address);
+		printf("The address is 0x%lx.\n", address);
+	}
 
 	return 0;
 }
