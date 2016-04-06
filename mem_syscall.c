@@ -63,15 +63,8 @@ asmlinkage long sys_my_syscall(int pid, long virtAddr){
 
 			// checks if there is a valid page table entry
 			if (pte_present(pte)){
-
-				unsigned r = 0;
-				unsigned i;
-				for (i = 20; i < 32; i++){
-					r |= 1 << i;
-				}
-				unsigned shifted_pfn = pte_pfn(pte) >> 12;
-				unsigned offset = r & virtAddr;
-				unsigned paddr = shifted_pfn | offset;
+				unsigned long long npfn = pte_pfn(pte);
+				unsigned long long paddr = (npfn << 12) | (virtAddr & 0x00000FFF);
 				return paddr;
 			}
 			else{
