@@ -2,6 +2,7 @@
 
 #include <linux/unistd.h>
 #include <linux/stdio.h>
+#include <linux/stdlib.h>
 
 #define __NR_my_syscall 359
 
