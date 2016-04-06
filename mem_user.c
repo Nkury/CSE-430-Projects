@@ -12,15 +12,14 @@ int main (int argc, char *argv[])
 	long virtAddr;
 	
 	if (argc != 3) {
-		printf("Two arguments are expected in the form of <PID> <Virtual Address>.");
+		printf("Two arguments are expected in the form of <PID> <0xVirtual_Address>.");
 		exit(1);
 	}
 	else {
 		pid = atoi(argv[1]);
-		virtAddr = strtol(argv[2], NULL, 16);
+		virtAddr = atoi(argv[2]);
+		long address = syscall(__NR_my_syscall, pid, virtAddr);
 	}
-	
-	long address = syscall(__NR_my_syscall, pid, virtAddr);
 
 	if (address == -1)
 		printf("That page is not available.\n");
