@@ -17,7 +17,7 @@ int main (int argc, char *argv[])
 	}
 	else {
 		pid = atoi(argv[1]);
-		virtAddr = atol(argv[2]);
+		virtAddr = strtol(argv[2], NULL, 16);
 	}
 	
 	long address = syscall(__NR_my_syscall, pid, virtAddr);
