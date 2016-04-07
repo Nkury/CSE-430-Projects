@@ -84,7 +84,7 @@ asmlinkage long sys_my_syscall(int pid, unsigned long virtAddr, int print){
 					else{
 						swp_entry_t swp;
 						swp = pte_to_swp_entry(pte);
-						return swp_type(Swp);
+						return swp_type(swp);
 					}
 				}
 				else{
