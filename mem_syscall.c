@@ -21,7 +21,7 @@
 #include <asm/pgtable.h>
 #include <asm/tlbflush.h>
 
-asmlinkage long sys_my_syscall(int pid, unsigned long virtAddr){
+asmlinkage long sys_my_syscall(int pid, unsigned long virtAddr, int print){
 
 	pgd_t *pgd;
 	pud_t *pud;
@@ -63,18 +63,28 @@ asmlinkage long sys_my_syscall(int pid, unsigned long virtAddr){
 
 			// checks if there is a valid page table entry
 			if (pte_present(pte)){
-				unsigned long npfn = pte_pfn(pte);
-				unsigned long offset = (virtAddr & 0x00000FFF);
-				unsigned long npfn_shift = (npfn << 12);
-				unsigned long paddr = (npfn_shift | offset);
-				return paddr;
+				if (print == 0){
+					return pte_pfn(pte);
+				}
+				else{
+					unsigned long npfn = pte_pfn(pte);
+					unsigned long offset = (virtAddr & 0x00000FFF);
+					unsigned long npfn_shift = (npfn << 12);
+					unsigned long paddr = (npfn_shift | offset);
+					return paddr;
+				}
 			}
 			else{
 
 				if (pte_none(pte))
 					return -1;
 
-				return pte_pfn(pte);
+				if (print == 0){
+					return pte_pfn(pte);
+				}
+				else{
+					return pte; // swap identifier
+				}
 			}
 
 		}
