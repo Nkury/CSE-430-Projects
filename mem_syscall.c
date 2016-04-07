@@ -83,7 +83,7 @@ asmlinkage long sys_my_syscall(int pid, unsigned long virtAddr, int print){
 					return pte_pfn(pte);
 				}
 				else{
-					return pte; // swap identifier
+					return pte_val(pte); // swap identifier
 				}
 			}
 
