@@ -75,15 +75,20 @@ asmlinkage long sys_my_syscall(int pid, unsigned long virtAddr, int print){
 				}
 			}
 			else{
-
-				if (pte_none(pte))
-					return -1;
-
-				if (print == 0){
-					return pte_pfn(pte);
+				if (!pte_none(pte)){
+					if (print == 0){
+						swp_entry_t swp;
+						swp = pte_to_swp_entry(pte);
+						return swp_offset(swp);
+					}
+					else{
+						swp_entry_t swp;
+						swp = pte_to_swp_entry(pte);
+						return swp_type(Swp);
+					}
 				}
 				else{
-					return pte_val(pte); // swap identifier
+					return -1;
 				}
 			}
 

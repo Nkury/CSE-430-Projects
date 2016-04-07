@@ -34,7 +34,7 @@ int main (int argc, char *argv[])
 		printf("That page is not available.\n");
 	else {
 		//printf("The address is %lu.\n", address);	// testing
-		printf("phys_addr: 0x%lX, pfn: %ld\n", address, pfn);
+		printf("phys_addr: 0x%lX, pfn/swp_offset: %ld\n", address, pfn);
 	}
 
 	return 0;
