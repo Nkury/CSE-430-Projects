@@ -6,6 +6,8 @@
     <ClCompile Include="user.c" />
     <ClCompile Include="fork_bomb_killer.c" />
     <ClCompile Include="mem_syscall.c" />
+    <ClCompile Include="mem_user.c" />
+    <ClCompile Include="mem_thrashing.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProcessInfo.h" />
