@@ -51,18 +51,6 @@ int my_kthread_function(void* data){
 	return 0;
 }
 
-static int __init thrash_detection(void){
-	int data = 20;
-
-	// We can instantiate multiple threads, but I think one should suffice?
-	task = kthread_run(
-		&my_kthread_function,
-		(void*)data,
-		"my_kthread");
-
-	return 0;
-}
-
 // checks if pte's access bit is 1. If it is, it will clear it appropriately
 int ptep_test_and_clear_young(struct vm_area_struct *vma,
 	unsigned long addr, pte_t *ptep)
@@ -78,6 +66,20 @@ int ptep_test_and_clear_young(struct vm_area_struct *vma,
 
 	return ret;
 }
+
+static int __init thrash_detection(void){
+	int data = 20;
+
+	// We can instantiate multiple threads, but I think one should suffice?
+	task = kthread_run(
+		&my_kthread_function,
+		(void*)data,
+		"my_kthread");
+
+	return 0;
+}
+
+
 
 static void __exit thrash_detection_exit(void){
 	kthread_stop(task);
