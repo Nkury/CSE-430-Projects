@@ -90,11 +90,12 @@ int my_kthread_function(void* data){
 
 					}
 				}
+
 				temp = temp->vm_next;
 
 			}
 
-			printk(KERN_INFO "%d: %d", task->pid, wss); // prints [PID]:[WSS] of the process
+			printk(KERN_INFO "%d: %d\n", task->pid, wss); // prints [PID]:[WSS] of the process
 		}
 
 		msleep(1000);
