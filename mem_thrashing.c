@@ -27,8 +27,7 @@
 struct task_struct *task;
 int wss; // working set count
 
-int ptep_test_and_clear_young(struct vm_area_struct,
-	unsigned long, pte_t);
+int ptep_test_and_clear_young(struct vm_area_struct, unsigned long, pte_t);
 
 int my_kthread_function(void* data){
 
@@ -40,16 +39,14 @@ int my_kthread_function(void* data){
 
 	// use PAGE_SIZE constant for the offset
 	while (!kthread_should_stop()){
-		struct list_head *p;
-		struct processTable *temp;
-		struct processTable *ts;
+
 		for_each_process(task){
 			wss = 0; // every process's WSS gets set to 0 after we count one process
 			int virtAddr;
 			// go through the VMAs of a process where virtAddr is the address
-			vm_area_struct *temp = task->mm->mmap;
+			struct vm_area_struct *temp = task->mm->mmap;
 			while (temp){
-				for (virtAddr = task->mm->mmap->vm_start, virtAddr < task->mm->mmap->vm_end, virtAddr += PAGE_SIZE){
+				for (virtAddr = task->mm->mmap->vm_start; virtAddr < task->mm->mmap->vm_end; virtAddr += PAGE_SIZE){
 					pgd = pgd_offset(task->mm, virtAddr);
 
 					// checks if there is a valid entry in the page global directory
@@ -75,12 +72,14 @@ int my_kthread_function(void* data){
 
 					pte = *ptep;
 
+					ptep_test_and_clear_young(temp, virtAddr, ptep);
+
 					pte_unmap_unlock(ptep, ptl);
 
-					ptep_test_and_clear_young(temp, virtAddr, ptep);
+
 				}
 
-				temp = temp->next;
+				temp = temp->vm_next;
 			}
 
 			printk(KERN_INFO "%d: %d", task->pid, wss); // prints [PID]:[WSS] of the process
