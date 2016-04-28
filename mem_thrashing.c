@@ -46,50 +46,52 @@ int my_kthread_function(void* data){
 			// go through the VMAs of a process where virtAddr is the address
 			struct vm_area_struct *temp = task->mm->mmap;
 			while (temp){
-				for (virtAddr = task->mm->mmap->vm_start; virtAddr < task->mm->mmap->vm_end; virtAddr += PAGE_SIZE){
-					pgd = pgd_offset(task->mm, virtAddr);
+				if (temp->vm_flags && VM_IO){
+					for (virtAddr = task->mm->mmap->vm_start; virtAddr < task->mm->mmap->vm_end; virtAddr += PAGE_SIZE){
+						pgd = pgd_offset(task->mm, virtAddr);
 
-					// checks if there is a valid entry in the page global directory
-					if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd))){
-						return -1;
+						// checks if there is a valid entry in the page global directory
+						if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd))){
+							return -1;
+						}
+
+						pud = pud_offset(pgd, virtAddr);
+
+						// checks if there is a valid entry in the page upper directory
+						if (pud_none(*pud) || unlikely(pud_bad(*pud))){
+							return -1;
+						}
+
+						pmd = pmd_offset(pud, virtAddr);
+
+						// checks if there is a valid entry in the page middle directory
+						if (pmd_none(*pmd) || unlikely(pmd_bad(*pmd))){
+							return -1;
+						}
+
+						ptep = pte_offset_map_lock(task->mm, pmd, virtAddr, &ptl);
+
+						pte = *ptep;
+
+						int ret;
+						ret = 0;
+
+						if (pte_young(*ptep)){
+							ret = test_and_clear_bit(_PAGE_BIT_ACCESSED,
+								(unsigned long *)&ptep->pte);
+							wss++;
+						}
+
+						if (ret)
+							pte_update(temp->vm_mm, virtAddr, ptep);
+
+						pte_unmap_unlock(ptep, ptl);
+
+
 					}
-
-					pud = pud_offset(pgd, virtAddr);
-
-					// checks if there is a valid entry in the page upper directory
-					if (pud_none(*pud) || unlikely(pud_bad(*pud))){
-						return -1;
-					}
-
-					pmd = pmd_offset(pud, virtAddr);
-
-					// checks if there is a valid entry in the page middle directory
-					if (pmd_none(*pmd) || unlikely(pmd_bad(*pmd))){
-						return -1;
-					}
-
-					ptep = pte_offset_map_lock(task->mm, pmd, virtAddr, &ptl);
-
-					pte = *ptep;
-
-					int ret;
-					ret = 0;
-
-					if (pte_young(*ptep)){
-						ret = test_and_clear_bit(_PAGE_BIT_ACCESSED,
-							(unsigned long *)&ptep->pte);
-						wss++;
-					}
-
-					if (ret)
-						pte_update(temp->vm_mm, virtAddr, ptep);
-
-					pte_unmap_unlock(ptep, ptl);
-
-
 				}
-
 				temp = temp->vm_next;
+
 			}
 
 			printk(KERN_INFO "%d: %d", task->pid, wss); // prints [PID]:[WSS] of the process
