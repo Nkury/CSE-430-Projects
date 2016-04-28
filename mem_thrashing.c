@@ -47,7 +47,7 @@ int my_kthread_function(void* data){
 			struct vm_area_struct *temp = task->mm->mmap;
 			while (temp){
 				if (temp->vm_flags && VM_IO){
-					for (virtAddr = task->mm->mmap->vm_start; virtAddr < task->mm->mmap->vm_end; virtAddr += PAGE_SIZE){
+					for (virtAddr = temp->vm_start; virtAddr < temp->vm_end; virtAddr += PAGE_SIZE){
 						pgd = pgd_offset(task->mm, virtAddr);
 
 						// checks if there is a valid entry in the page global directory
