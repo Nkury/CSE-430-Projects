@@ -72,7 +72,17 @@ int my_kthread_function(void* data){
 
 					pte = *ptep;
 
-					ptep_test_and_clear_young(temp, virtAddr, ptep);
+					int ret;
+					ret = 0;
+
+					if (pte_young(*ptep)){
+						ret = test_and_clear_bit(_PAGE_BIT_ACCESSED,
+							(unsigned long *)&ptep->pte);
+						wss++;
+					}
+
+					if (ret)
+						pte_update(temp->vm_mm, virtAddr, ptep);
 
 					pte_unmap_unlock(ptep, ptl);
 
@@ -90,23 +100,6 @@ int my_kthread_function(void* data){
 	return 0;
 }
 
-// checks if pte's access bit is 1. If it is, it will clear it appropriately
-int ptep_test_and_clear_young(struct vm_area_struct *vma,
-	unsigned long addr, pte_t *ptep)
-{
-	int ret = 0;
-
-	if (pte_young(*ptep)){
-		ret = test_and_clear_bit(_PAGE_BIT_  ACCESSED,
-			(unsigned long *)&ptep->pte);
-		wss++;
-	}
-
-	if (ret)
-		pte_update(vma - >vm_mm, addr, ptep);
-
-	return ret;
-}
 
 static int __init thrash_detection(void){
 	int data = 20;
@@ -127,4 +120,4 @@ static void __exit thrash_detection_exit(void){
 }
 
 module_init(thrash_detection);
-module_exit(thrash_detection);
+module_exit(thrash_detection_exit);
