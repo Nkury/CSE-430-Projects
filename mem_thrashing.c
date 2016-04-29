@@ -55,32 +55,38 @@ int my_kthread_function(void* data){
 
 							// checks if there is a valid entry in the page global directory
 							if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd))){
-								break;
+								// do nothing
 							}
+							else{
 
-							pud = pud_offset(pgd, virtAddr);
+								pud = pud_offset(pgd, virtAddr);
 
-							// checks if there is a valid entry in the page upper directory
-							if (pud_none(*pud) || unlikely(pud_bad(*pud))){
-								break;
+								// checks if there is a valid entry in the page upper directory
+								if (pud_none(*pud) || unlikely(pud_bad(*pud))){
+									// do nothing
+								}
+								else{
+
+									pmd = pmd_offset(pud, virtAddr);
+
+									// checks if there is a valid entry in the page middle directory
+									if (pmd_none(*pmd) || unlikely(pmd_bad(*pmd))){
+										// do nothing
+									}
+									else{
+
+										ptep = pte_offset_map_lock(task->mm, pmd, virtAddr, &ptl);
+
+										pte = *ptep;
+
+										if (pte_present(pte)){
+											accessTest(temp, virtAddr, ptep);
+										}
+
+										pte_unmap_unlock(ptep, ptl);
+									}
+								}
 							}
-
-							pmd = pmd_offset(pud, virtAddr);
-
-							// checks if there is a valid entry in the page middle directory
-							if (pmd_none(*pmd) || unlikely(pmd_bad(*pmd))){
-								break;
-							}
-
-							ptep = pte_offset_map_lock(task->mm, pmd, virtAddr, &ptl);
-
-							pte = *ptep;
-
-							if (pte_present(pte)){
-								accessTest(temp, virtAddr, ptep);
-							}
-
-							pte_unmap_unlock(ptep, ptl);
 						}
 					}
 
