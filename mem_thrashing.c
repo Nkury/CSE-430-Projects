@@ -27,7 +27,7 @@
 struct task_struct *task;
 int wss; // working set count
 int twss = 0; // total WSS
-int accessTest(struct vm_area_struct, unsigned long, pte_t);
+int accessTest(struct vm_area_struct*, unsigned long, pte_t*);
 int SLEEP_TIME = 1000;
 
 int my_kthread_function(void* data){
@@ -44,7 +44,7 @@ int my_kthread_function(void* data){
 		for_each_process(task){
 			twss += wss;
 			wss = 0; // every process's WSS gets set to 0 after we count one process
-			int virtAddr;
+			unsigned long virtAddr;
 			// go through the VMAs of a process where virtAddr is the address
 			if (task->mm != NULL && task->mm->mmap != NULL){
 				struct vm_area_struct *temp = task->mm->mmap;
@@ -95,12 +95,12 @@ int my_kthread_function(void* data){
 			}
 
 			if (twss > (totalram_pages * 9) / 10){
-				prink(KERN_INFO "Kernel Alert!\n");
+				printk(KERN_INFO "Kernel Alert!\n");
 			}
 
 			printk(KERN_INFO "PID %d: %d\n", task->pid, wss); // prints [PID]:[WSS] of the process
 		}
-
+		twss = 0;
 		msleep(SLEEP_TIME);
 	}
 	return 0;
