@@ -26,8 +26,8 @@
 
 struct task_struct *task;
 int wss; // working set count
-
-int ptep_test_and_clear_young(struct vm_area_struct, unsigned long, pte_t);
+int twss = 0; // total WSS
+int accessTest(struct vm_area_struct, unsigned long, pte_t);
 
 int my_kthread_function(void* data){
 
@@ -41,61 +41,57 @@ int my_kthread_function(void* data){
 	while (!kthread_should_stop()){
 
 		for_each_process(task){
+			twss += wss;
 			wss = 0; // every process's WSS gets set to 0 after we count one process
 			int virtAddr;
 			// go through the VMAs of a process where virtAddr is the address
-			struct vm_area_struct *temp = task->mm->mmap;
-			while (temp){
-				if (temp->vm_flags && VM_IO){
-					for (virtAddr = temp->vm_start; virtAddr < temp->vm_end; virtAddr += PAGE_SIZE){
-						pgd = pgd_offset(task->mm, virtAddr);
+			if (task->mm != NULL && task->mm->mmap != NULL){
+				struct vm_area_struct *temp = task->mm->mmap;
+				while (temp != NULL){
+					if (temp->vm_flags && VM_IO){
+						for (virtAddr = temp->vm_start; virtAddr < temp->vm_end; virtAddr += PAGE_SIZE){
+							pgd = pgd_offset(temp->vm_mm, virtAddr);
 
-						// checks if there is a valid entry in the page global directory
-						if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd))){
-							return -1;
+							// checks if there is a valid entry in the page global directory
+							if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd))){
+								return -1;
+							}
+
+							pud = pud_offset(pgd, virtAddr);
+
+							// checks if there is a valid entry in the page upper directory
+							if (pud_none(*pud) || unlikely(pud_bad(*pud))){
+								return -1;
+							}
+
+							pmd = pmd_offset(pud, virtAddr);
+
+							// checks if there is a valid entry in the page middle directory
+							if (pmd_none(*pmd) || unlikely(pmd_bad(*pmd))){
+								return -1;
+							}
+
+							ptep = pte_offset_map_lock(temp->vm_mm, pmd, virtAddr, &ptl);
+
+							pte = *ptep;
+
+							if (pte_present(pte)){
+								accessTest(temp, virtAddr, ptep);
+							}
+
+							pte_unmap_unlock(ptep, ptl);
 						}
-
-						pud = pud_offset(pgd, virtAddr);
-
-						// checks if there is a valid entry in the page upper directory
-						if (pud_none(*pud) || unlikely(pud_bad(*pud))){
-							return -1;
-						}
-
-						pmd = pmd_offset(pud, virtAddr);
-
-						// checks if there is a valid entry in the page middle directory
-						if (pmd_none(*pmd) || unlikely(pmd_bad(*pmd))){
-							return -1;
-						}
-
-						ptep = pte_offset_map_lock(task->mm, pmd, virtAddr, &ptl);
-
-						pte = *ptep;
-
-						int ret;
-						ret = 0;
-
-						if (pte_young(*ptep)){
-							ret = test_and_clear_bit(_PAGE_BIT_ACCESSED,
-								(unsigned long *)&ptep->pte);
-							wss++;
-						}
-
-						if (ret)
-							pte_update(temp->vm_mm, virtAddr, ptep);
-
-						pte_unmap_unlock(ptep, ptl);
-
-
 					}
+
+					temp = temp->vm_next;
 				}
-
-				temp = temp->vm_next;
-
 			}
 
-			printk(KERN_INFO "%d: %d\n", task->pid, wss); // prints [PID]:[WSS] of the process
+			if (twss > (totalram_pages * 9) / 10){
+				prink(KERN_INFO "Kernel Alert!\n");
+			}
+
+			printk(KERN_INFO "PID %d: %d\n", task->pid, wss); // prints [PID]:[WSS] of the process
 		}
 
 		msleep(1000);
@@ -103,6 +99,21 @@ int my_kthread_function(void* data){
 	return 0;
 }
 
+int accessTest(struct vm_area_struct *vma, unsigned long addr, pte_t *ptep){
+	int ret;
+	ret = 0;
+
+	if (pte_young(*ptep)){
+		ret = test_and_clear_bit(_PAGE_BIT_ACCESSED,
+			(unsigned long *)&ptep->pte);
+		wss++;
+	}
+
+	if (ret)
+		pte_update(vma->vm_mm, addr, ptep);
+
+	return ret;
+}
 
 static int __init thrash_detection(void){
 	int data = 20;
